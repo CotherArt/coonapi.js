@@ -1,4 +1,5 @@
 import express from "express";
+require("dotenv").config();
 
 import { createUser, getUserByEmail, getUserByUsername } from "../db/users";
 import { authentication, random } from "../helpers";
@@ -67,8 +68,9 @@ export const login = async (req: express.Request, res: express.Response) => {
 
     await user.save();
 
+    const DOMAIN = process.env.DOMAIN;
     res.cookie("COTHER-AUTH", user.authentication.sessionToken, {
-      domain: "localhost",
+      domain: DOMAIN,
       path: "/",
     });
 
