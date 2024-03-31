@@ -30,7 +30,6 @@ server.listen(PORT, () => {
 });
 
 const MONGO_URL = process.env.MONGO_URL;
-console.log(MONGO_URL);
 
 mongoose.Promise = Promise;
 mongoose.connect(MONGO_URL);
