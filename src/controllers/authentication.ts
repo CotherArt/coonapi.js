@@ -1,8 +1,11 @@
 import express from "express";
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 import { createUser, getUserByEmail, getUserByUsername } from "../db/users";
 import { authentication, random } from "../helpers";
+
+const secretKey = process.env.SECRET;
 
 export const register = async (req: express.Request, res: express.Response) => {
   try {
@@ -68,13 +71,17 @@ export const login = async (req: express.Request, res: express.Response) => {
 
     await user.save();
 
-    const DOMAIN = process.env.DOMAIN;
-    res.cookie("COTHER-AUTH", user.authentication.sessionToken, {
-      domain: DOMAIN,
-      path: "/",
-    });
+    // Generate JWT
+    const access_token = jwt.sign({ userId: user._id }, secretKey);
+    // res.json({ token });
 
-    return res.status(200).json(user);
+    // const DOMAIN = process.env.DOMAIN;
+    // res.cookie("COTHER-AUTH", user.authentication.sessionToken, {
+    //   domain: DOMAIN,
+    //   path: "/",
+    // });
+
+    return res.status(200).json({ access_token });
   } catch (error) {
     console.log(error);
     return res.sendStatus(500); // Internal Server Error

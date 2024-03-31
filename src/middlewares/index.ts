@@ -1,7 +1,11 @@
 import express from "express";
 import { get, merge } from "lodash";
+const jwt = require("jsonwebtoken");
 
-import { RoleType, getUserByID, getUserBySessionToken } from "../db/users";
+require("dotenv").config();
+
+import { RoleType, getUserByID } from "../db/users";
+const secretKey = process.env.SECRET;
 
 /**
  * Middleware to check if the user is authenticated.
@@ -17,27 +21,37 @@ export async function isAuthenticated(
 ) {
   try {
     // Retrieve the session token from the cookies sent with the request.
-    const sessionToken = req.cookies["COTHER-AUTH"];
+    // const sessionToken = req.cookies["COTHER-AUTH"];
 
-    // If the session token is not present, respond with a 401 Unauthorized status.
-    if (!sessionToken) {
-      return res.sendStatus(401); // Unauthorized: Missing session token
+    const token = req.headers["authorization"];
+
+    if (!token) {
+      return res.status(403).json({ error: "Token is required" });
     }
 
-    // Use the session token to retrieve the corresponding user's information.
-    const existingUser = await getUserBySessionToken(sessionToken);
+    const myToken = token.split(" ")[1];
 
-    // If no user is associated with the session token, respond with a 401 Unauthorized status.
-    if (!existingUser) {
-      return res.sendStatus(401); // Unauthorized: Invalid session token
-    }
+    jwt.verify(myToken, secretKey, async (err: any, decoded: any) => {
+      if (err) {
+        return res.status(401).json({ error: "Invalid token" });
+      }
+      console.log(decoded);
+      const userId = decoded.userId;
+      // Use the session token to retrieve the corresponding user's information.
+      const existingUser = await getUserByID(userId);
 
-    // If the user exists, merge their information into the request object.
-    // This allows subsequent middleware and route handlers to access the user's information.
-    merge(req, { identity: existingUser });
+      // If no user is associated with the session token, respond with a 401 Unauthorized status.
+      if (!existingUser) {
+        return res.sendStatus(401); // Unauthorized: Invalid session token
+      }
 
-    // If the user is authenticated, proceed to the next middleware in the stack.
-    return next();
+      // If the user exists, merge their information into the request object.
+      // This allows subsequent middleware and route handlers to access the user's information.
+      merge(req, { identity: existingUser });
+
+      // If the user is authenticated, proceed to the next middleware in the stack.
+      return next();
+    });
   } catch (error) {
     // If an error occurs during the execution of the above code, log the error to the console.
     console.log(error);
