@@ -2,6 +2,7 @@ import express from "express";
 
 import { getUsers, deleteUserByID, getUserByID, RoleType } from "../db/users";
 import { authentication, random } from "../helpers";
+import { get } from "lodash";
 
 export const getAllUsers = async (
   req: express.Request,
@@ -19,8 +20,27 @@ export const getAllUsers = async (
 
 export const getUser = async (req: express.Request, res: express.Response) => {
   try {
-    const id = req.params.id;
+    const { id } = req.params;
+
     const selectedUser = await getUserByID(id);
+
+    return res.status(200).json(selectedUser); // Return the users as JSON response
+  } catch (error) {
+    console.log(error);
+    return res.sendStatus(500); // Internal Server Error if something goes wrong
+  }
+};
+
+export const getCurrentUser = async (
+  req: express.Request,
+  res: express.Response
+) => {
+  try {
+    const currentUserId = get(req, "identity._id") as string;
+    console.log("currentUserId", currentUserId);
+    console.log(req);
+
+    const selectedUser = await getUserByID(currentUserId);
 
     return res.status(200).json(selectedUser); // Return the users as JSON response
   } catch (error) {
