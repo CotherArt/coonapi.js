@@ -35,7 +35,6 @@ export async function isAuthenticated(
       if (err) {
         return res.status(401).json({ error: "Invalid token" });
       }
-      console.log(decoded);
       const userId = decoded.userId;
       // Use the session token to retrieve the corresponding user's information.
       const existingUser = await getUserByID(userId);

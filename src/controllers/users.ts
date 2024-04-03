@@ -37,9 +37,6 @@ export const getCurrentUser = async (
 ) => {
   try {
     const currentUserId = get(req, "identity._id") as string;
-    console.log("currentUserId", currentUserId);
-    console.log(req);
-
     const selectedUser = await getUserByID(currentUserId);
 
     return res.status(200).json(selectedUser); // Return the users as JSON response
@@ -70,6 +67,50 @@ export const deleteUser = async (
 };
 
 export const updateUser = async (
+  req: express.Request,
+  res: express.Response
+) => {
+  try {
+    const { id } = req.params;
+    const { username, email, authentication, profile } = req.body;
+
+    const user = await getUserByID(id);
+
+    if (!user) {
+      return res.sendStatus(404); // Not Found if user doesn't exist
+    }
+    // Validate if the role is a valid RoleType
+    if (authentication?.role) {
+      if (!Object.values(RoleType).includes(authentication.role)) {
+        return res.status(400).json({ error: "Invalid role" }); // Bad Request if role is not a valid RoleType
+      }
+      //update role
+      user.authentication.role = authentication.role;
+    }
+
+    if (username) {
+      user.username = username;
+    }
+
+    if (email) {
+      user.email = email;
+    }
+
+    // Update personal data fields if provided
+    if (profile) {
+      Object.assign(user.profile, profile);
+    }
+
+    await user.save();
+
+    return res.status(200).json(user).end();
+  } catch (error) {
+    console.log(error);
+    return res.sendStatus(500); // Internal Server Error
+  }
+};
+
+export const updateUserProfile = async (
   req: express.Request,
   res: express.Response
 ) => {
